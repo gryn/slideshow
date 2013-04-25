@@ -206,8 +206,14 @@ var Slideshow = {
   goto: function(slide, context) {
     var base = this;
 
+    var promise = $.Deferred();
+    promise.resolve();
+    promise = promise.promise();
+
+    context = context || {};
+
     slide = this._figurePage(slide);
-    if( context && context.force || !slide.length || slide[0] == this.$currentSlide[0] ) return this.$currentSlide;
+    if(!context.force && (!slide.length || slide[0] == this.$currentSlide[0])) return promise;
 
     var beforeGotoEvent = $.Event('slideshowBeforeGoto', {
       slideshow: this,
@@ -216,22 +222,25 @@ var Slideshow = {
     });
     this.$el.trigger(beforeGotoEvent);
     if(beforeGotoEvent.isDefaultPrevented()) {
-      if( context ) context.cancelled = true;
-      return this.$currentSlide;
+      context.cancelled = true;
+      return promise;
     }
 
-    var promise = this.effect.goto(this, slide, context);
+    promise = this.effect.goto(this, slide, context);
     if(!promise.then) {
       if(typeof promise.promise != 'function')
         throw "Effect did not return a promise object";
 
       promise = promise.promise();
     }
+
+    var lastSlide = this.$currentSlide;
     this.$currentSlide = slide;
 
     var gotoEvent = $.Event('slideshowGoto', {
       slideshow: this,
       slide: slide,
+      lastSlide: lastSlide,
       context: context
     });
     this.$el.trigger(gotoEvent);
@@ -239,6 +248,7 @@ var Slideshow = {
     var gotoCompleteEvent = $.Event('slideshowGotoComplete', {
       slideshow: this,
       slide: slide,
+      lastSlide: lastSlide,
       context: context
     });
 
@@ -283,7 +293,7 @@ $.fn.slideshow = function(method) {
   // they are still silently dropped from the result array!
   return this.map(function() {
     var slideshow = $(this).data('Slideshow');
-	  if( !slideshow ) {
+    if( !slideshow ) {
       return returnValue ?
         undefined :
         this;
@@ -294,7 +304,7 @@ $.fn.slideshow = function(method) {
     return returnValue ?
       [result] :
       this;
-	});
+  });
 };
 
 Slideshow.arrows = function(left, right, wrap) {
@@ -304,10 +314,10 @@ Slideshow.arrows = function(left, right, wrap) {
   wrap = wrap ? '-wrap' : ''; 
 
   left.click(function() {
-    slideshow.goto('prev'+wrap);
+    slideshow.goto('prev'+wrap, {from: 'arrows'});
   });
   right.click(function() {
-    slideshow.goto('next'+wrap);
+    slideshow.goto('next'+wrap, {from: 'arrows'});
   });
 
   function onGoto() {
@@ -335,14 +345,16 @@ Slideshow.navigation = function(nav, linkCreateCallback) {
     var el = linkCreateCallback(i, slide);
     el.data('Slideshow-slide', slide);
     slide.data('Slideshow-nav', el);
-    nav.append(el);
+    if(!el.parent().length) {
+      nav.append(el);
+    }
     el.click(navClick);
   });
 
   function navClick() {
     var el = $(this);
     var slide = el.data('Slideshow-slide');
-    slideshow.goto(slide);
+    slideshow.goto(slide, {from: 'navigation'});
   }
 
   function onGoto() {
