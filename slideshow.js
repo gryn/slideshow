@@ -309,7 +309,6 @@ $.fn.slideshow = function(method) {
 
 Slideshow.arrows = function(left, right, wrap) {
   var slideshow = this;
-  if( !slideshow ) return;
 
   wrap = wrap ? '-wrap' : ''; 
 
@@ -333,7 +332,6 @@ Slideshow.arrows = function(left, right, wrap) {
 
 Slideshow.navigation = function(nav, linkCreateCallback) {
   var slideshow = this;
-  if( !slideshow ) return this;
 
   if(!linkCreateCallback) linkCreateCallback = function(i, slide) {
     return $('<a>'+(i+1)+'</a>');
@@ -388,6 +386,65 @@ Slideshow.effects.fade = {
     return slideshow.$currentSlide.fadeOut();
   }
 };
+
+// timer accepts the options below when starting the timer,
+// or uses those passed in when the slideshow was initialized.
+// (if passed in directly, remove the prefix "timer", e.g. "duration" not "timerDuration").
+// will emit a timer every time a timer starts and stops
+// (slightly different from the goto event that triggers after the timer goes off)
+$.extend(Slideshow.defaults, {
+  timerDuration: 1000,
+  timerWrap: true,
+  timerCancelOnGoto: false
+});
+Slideshow.startTimer = function(options) {
+  if(this.timerID) {
+    this.stopTimer();
+  }
+  options = options || {};
+  this.timerDuration = options.duration || this.options.timerDuration;
+  this.timerWrap = options.wrap || this.options.timerWrap;
+  this.timerCancelOnGoto = options.cancelOnGoto || this.options.cancelOnGoto;
+  this.timerID = setInterval(this._timerAlarm.bind(this), this.timerDuration);
+  if(!this.timerOnce) {
+    this.timerOnce = true;
+    this.$el.on('slideshowGoto', this._timerOnGoto);
+  }
+
+  this.timerSlide = this.$currentSlide;
+  this._timerTriggerEvent('slideshowTimerStart');
+}
+Slideshow.stopTimer = function() {
+  if(!this.timerID) return;
+  clearInterval(this.timerID);
+  this.timerID = null;
+  this._timerTriggerEvent('slideshowTimerStop');
+}
+Slideshow._timerAlarm = function() {
+  var next = this.timerWrap ? 'next-wrap' : 'next';
+  if(this._figurePage(next).length) {
+    this.goto(next, {from: 'timer'});
+  } else {
+    this.stopTimer();
+  }
+}
+Slideshow._timerOnGoto = function(e) {
+  if(e.context == 'timer') return;
+
+  e.slideshow.stopTimer();
+
+  if(!e.slideshow.timerCancelOnGoto) {
+    e.slideshow.startTimer();
+  }
+}
+Slideshow._timerTriggerEvent = function(name) {
+  var timerEvent = $.Event(name, {
+    slideshow: this,
+    slide: this.timerSlide,
+    context: {}
+  });
+  this.$el.trigger(timerEvent);
+}
 
 window.Slideshow = Slideshow;
 
