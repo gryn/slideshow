@@ -119,7 +119,7 @@
 
 //  Slideshow.effects.swipe = {
 //    ...
-//    goto: function(slideshow, slide, context) {
+//    'goto': function(slideshow, slide, context) {
 //      slide.show().css({'z-index': 10, 'visibility': 'visible', left: 0});
 //      slideshow.$currentSlide.css('z-index', 20);
 //      var swipeDistance = slideshow.$currentSlide.width() / 2;
@@ -176,7 +176,7 @@ var Slideshow = {
         slideshow.$currentSlide = slideshow.children.first();
         slideshow.$el.scrollLeft(0);
       },
-      goto: function(slideshow, slide, context) {
+      'goto': function(slideshow, slide, context) {
         var position = slide.position();
         return slideshow.wrapper.stop().animate({'left': -position.left});
       }
@@ -203,7 +203,7 @@ var Slideshow = {
     }
     return $(slide);
   },
-  goto: function(slide, context) {
+  'goto': function(slide, context) {
     var base = this;
 
     var promise = $.Deferred();
@@ -226,7 +226,7 @@ var Slideshow = {
       return promise;
     }
 
-    promise = this.effect.goto(this, slide, context);
+    promise = this.effect['goto'](this, slide, context);
     if(!promise.then) {
       if(typeof promise.promise != 'function')
         throw "Effect did not return a promise object";
@@ -313,10 +313,10 @@ Slideshow.arrows = function(left, right, wrap) {
   wrap = wrap ? '-wrap' : ''; 
 
   left.click(function() {
-    slideshow.goto('prev'+wrap, {from: 'arrows'});
+    slideshow['goto']('prev'+wrap, {from: 'arrows'});
   });
   right.click(function() {
-    slideshow.goto('next'+wrap, {from: 'arrows'});
+    slideshow['goto']('next'+wrap, {from: 'arrows'});
   });
 
   function onGoto() {
@@ -352,7 +352,7 @@ Slideshow.navigation = function(nav, linkCreateCallback) {
   function navClick() {
     var el = $(this);
     var slide = el.data('Slideshow-slide');
-    slideshow.goto(slide, {from: 'navigation'});
+    slideshow['goto'](slide, {from: 'navigation'});
   }
 
   function onGoto() {
@@ -380,7 +380,7 @@ Slideshow.effects.fade = {
     slideshow.$el.scrollLeft(0);
     slideshow.$currentSlide.css({'z-index': 10, 'visibility': 'visible'});
   },
-  goto: function(slideshow, slide, context) {
+  'goto': function(slideshow, slide, context) {
     slide.show().css({'z-index': 10, 'visibility': 'visible'});
     slideshow.$currentSlide.css('z-index', 20);
     return slideshow.$currentSlide.fadeOut();
@@ -423,7 +423,7 @@ Slideshow.stopTimer = function() {
 Slideshow._timerAlarm = function() {
   var next = this.timerWrap ? 'next-wrap' : 'next';
   if(this._figurePage(next).length) {
-    this.goto(next, {from: 'timer'});
+    this['goto'](next, {from: 'timer'});
   } else {
     this.stopTimer();
   }
