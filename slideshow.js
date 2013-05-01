@@ -2,10 +2,6 @@
 
 // SLIDESHOW:
 
-// 12/08/12:
-//  Rewrite with full documentation and use of jQuery 1.7 events.
-//  Not generally backwards compatible, but no major modifications to port old code.
-
 // An event framework for creating slideshows.
 // Could be useful for tabs, accordions,
 // and other similar patterns when you have a group of HTML elements
@@ -43,13 +39,15 @@
 //    effect: string,
 //      indicates which effect to use,
 //      you must add your own if you want something other than sliding*
+//    duration: milliseconds,
+//      effects should complete by the end of this duration
 //    wrapper: selector,
 //      informs the effect how to select a wrapper element
 //      (not all effects will need a wrapper)
 //    slide: selector,
 //      informs slideshow (and the effect) where the slides are
 // options may have effect specific options in it,
-// the default effect takes no options.
+// the default effect takes no options other than duration.
 
 // $.fn.slideshow(method) - Calls a method on the slideshow
 //  method: string,
@@ -123,7 +121,7 @@
 //      slide.show().css({'z-index': 10, 'visibility': 'visible', left: 0});
 //      slideshow.$currentSlide.css('z-index', 20);
 //      var swipeDistance = slideshow.$currentSlide.width() / 2;
-//      return slideshow.$currentSlide.animate(opacity: 'hidden', left: -swipeDistance);
+//      return slideshow.$currentSlide.animate({opacity: 'hidden', left: -swipeDistance}, slideshow.options.duration);
 //    }
 //  };
 
@@ -178,7 +176,7 @@ var Slideshow = {
       },
       'goto': function(slideshow, slide, context) {
         var position = slide.position();
-        return slideshow.wrapper.stop().animate({'left': -position.left});
+        return slideshow.wrapper.stop().animate({'left': -position.left}, slideshow.options.duration);
       }
     }
   },
@@ -265,12 +263,14 @@ var Slideshow = {
 
 Slideshow.defaults = {
   wrapper: 'div',
-  slide: 'section'
+  slide: 'section',
+  duration: 400
 };
 
 $.fn.slideshow = function(method) {
   var methodArguments = $.makeArray(arguments).slice(1);
-  var returnValue = /^=/.test(method);
+  var returnValue = /^=(.*)/.exec(method);
+  if(returnValue) method = returnValue[1];
 
   // init
   if(typeof method !== "string") {
@@ -366,12 +366,13 @@ Slideshow.navigation = function(nav, linkCreateCallback) {
 };
 
 // fade assumes markup/style:
-//  <div style="">
+//  <div style="position: relative; height: FOO;">
 //    <div style="">
 //      <section style="position: absolute; visibility: hidden">...</section>
 //      ...
 //    </div>
 //  </div>
+// NOTE: fade requires a fixed height since the slides are positioned absolutely.
 Slideshow.effects.fade = {
   init: function(slideshow) {
     slideshow.wrapper = slideshow.$el.children(slideshow.options.wrapper);
@@ -383,7 +384,7 @@ Slideshow.effects.fade = {
   'goto': function(slideshow, slide, context) {
     slide.show().css({'z-index': 10, 'visibility': 'visible'});
     slideshow.$currentSlide.css('z-index', 20);
-    return slideshow.$currentSlide.fadeOut();
+    return slideshow.$currentSlide.fadeOut(slideshow.options.duration);
   }
 };
 
