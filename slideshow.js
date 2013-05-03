@@ -157,9 +157,9 @@ var Slideshow = {
     this.$el = $(el);
     this.options = $.extend({}, Slideshow.defaults, options);
     
-    this.effect =
-      this.effects[this.options.effect] ||
-      this.effects['default'];
+    this.effect = this.effects[this.options.effect];
+    if(!this.effect)
+      throw "effect '"+this.options.effect+"' not found";
 
     this.effect.init(this);
 
@@ -182,18 +182,18 @@ var Slideshow = {
   },
   _figurePage: function(slide) {
     if( slide == 'next' || slide == '#next' )
-      return this.$currentSlide.next(this.options.slide);
+      return this.$currentSlide.nextAll(this.options.slide).first();
     if( slide == 'prev' || slide == '#prev' )
-      return this.$currentSlide.prev(this.options.slide);
+      return this.$currentSlide.prevAll(this.options.slide).first();
     if( slide == 'next-wrap' || slide == '#next-wrap' ) {
-      var next = this.$currentSlide.next(this.options.slide);
+      var next = this.$currentSlide.nextAll(this.options.slide).first();
       if( next.length ) return next;
       var prevAll = this.$currentSlide.prevAll(this.options.slide);
       if( prevAll.length ) return prevAll.last(); // order is closest to $currentSlide
       return this.$currentSlide;
     }
     if( slide == 'prev-wrap' || slide == '#prev-wrap' ) {
-      var prev = this.$currentSlide.prev(this.options.slide);
+      var prev = this.$currentSlide.prevAll(this.options.slide).first();
       if( prev.length ) return prev;
       var nextAll = this.$currentSlide.nextAll(this.options.slide).last();
       if( nextAll.length ) return nextAll.last();
@@ -262,6 +262,7 @@ var Slideshow = {
 };
 
 Slideshow.defaults = {
+  effect: 'default',
   wrapper: 'div',
   slide: 'section',
   duration: 400
@@ -430,11 +431,9 @@ Slideshow._timerAlarm = function() {
   }
 }
 Slideshow._timerOnGoto = function(e) {
-  if(e.context == 'timer') return;
-
   e.slideshow.stopTimer();
 
-  if(!e.slideshow.timerCancelOnGoto) {
+  if(e.context.from == 'timer' || !e.slideshow.timerCancelOnGoto) {
     e.slideshow.startTimer();
   }
 }
