@@ -405,10 +405,17 @@ Slideshow.startTimer = function(options) {
   this._clearInterval();
   
   options = options || {};
-  this.timerDuration = options.duration || this.options.timerDuration;
-  this.timerWrap = options.wrap || this.options.timerWrap;
-  this.timerCancelOnGoto = options.cancelOnGoto || this.options.cancelOnGoto;
-  this.timerID = setInterval(this._timerAlarm.bind(this), this.timerDuration);
+  this.timerDuration = typeof(options.duration) == 'undefined' ?
+      this.options.timerDuration :
+      options.duration;
+  this.timerWrap = typeof(options.wrap) == 'undefined' ?
+      this.options.timerWrap :
+      options.wrap;
+  this.timerCancelOnGoto = typeof(options.cancelOnGoto) == 'undefined' ?
+      this.options.cancelOnGoto :
+      options.cancelOnGoto;
+
+    this.timerID = setInterval(this._timerAlarm.bind(this), this.timerDuration);
   if(!this.timerOnce) {
     this.timerOnce = true;
     this.$el.on('slideshowGoto', this._timerOnGoto);
@@ -429,11 +436,11 @@ Slideshow.stopTimer = function(_event) {
 Slideshow.timerRunning = function() {
   return !!this.timerID;
 }
-Slideshow.toggleTimer = function() {
+Slideshow.toggleTimer = function(options) {
   if(this.timerRunning()) {
     this.stopTimer();
   } else {
-    this.startTimer();
+    this.startTimer(options);
   }
 }
 Slideshow._timerAlarm = function() {
@@ -445,6 +452,7 @@ Slideshow._timerAlarm = function() {
   }
 }
 Slideshow._timerOnGoto = function(e) {
+    console.log(e.slideshow);
   if(e.context.from != 'timer' && e.slideshow.timerCancelOnGoto) {
     e.slideshow.stopTimer();
   }
