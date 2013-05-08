@@ -181,6 +181,8 @@ var Slideshow = {
     }
   },
   _figurePage: function(slide) {
+    if( slide == 'current' || slide == '#current' )
+      return this.$currentSlide;
     if( slide == 'next' || slide == '#next' )
       return this.$currentSlide.nextAll(this.options.slide).first();
     if( slide == 'prev' || slide == '#prev' )
@@ -342,8 +344,8 @@ Slideshow.navigation = function(nav, linkCreateCallback) {
   children.each(function(i, slide) {
     slide = $(slide);
     var el = linkCreateCallback(i, slide);
-    el.data('Slideshow-slide', slide);
-    slide.data('Slideshow-nav', el);
+    $.data(el.get(0), 'Slideshow-slide', slide);
+    $.data(slide.get(0), 'Slideshow-nav', el);
     if(!el.parent().length) {
       nav.append(el);
     }
@@ -352,12 +354,12 @@ Slideshow.navigation = function(nav, linkCreateCallback) {
 
   function navClick() {
     var el = $(this);
-    var slide = el.data('Slideshow-slide');
+    var slide = $.data(this, 'Slideshow-slide');
     slideshow['goto'](slide, {from: 'navigation'});
   }
 
   function onGoto() {
-    var el = slideshow.$currentSlide.data('Slideshow-nav');
+    var el = $.data(slideshow.$currentSlide.get(0), 'Slideshow-nav') || $();
     el.addClass('selected');
     el.siblings().removeClass('selected');
   }
@@ -392,17 +394,16 @@ Slideshow.effects.fade = {
 // timer accepts the options below when starting the timer,
 // or uses those passed in when the slideshow was initialized.
 // (if passed in directly, remove the prefix "timer", e.g. "duration" not "timerDuration").
-// will emit a timer every time a timer starts and stops
-// (slightly different from the goto event that triggers after the timer goes off)
+// will emit a timer event when started and stopped
+// goto events from timer will have context.from = 'timer'
 $.extend(Slideshow.defaults, {
   timerDuration: 1000,
   timerWrap: true,
   timerCancelOnGoto: false
 });
 Slideshow.startTimer = function(options) {
-  if(this.timerID) {
-    this.stopTimer();
-  }
+  this._clearInterval();
+  
   options = options || {};
   this.timerDuration = options.duration || this.options.timerDuration;
   this.timerWrap = options.wrap || this.options.timerWrap;
@@ -416,11 +417,24 @@ Slideshow.startTimer = function(options) {
   this.timerSlide = this.$currentSlide;
   this._timerTriggerEvent('slideshowTimerStart');
 }
-Slideshow.stopTimer = function() {
+Slideshow._clearInterval = function() {
   if(!this.timerID) return;
   clearInterval(this.timerID);
   this.timerID = null;
+}
+Slideshow.stopTimer = function(_event) {
+  this._clearInterval();
   this._timerTriggerEvent('slideshowTimerStop');
+}
+Slideshow.timerRunning = function() {
+  return !!this.timerID;
+}
+Slideshow.toggleTimer = function() {
+  if(this.timerRunning()) {
+    this.stopTimer();
+  } else {
+    this.startTimer();
+  }
 }
 Slideshow._timerAlarm = function() {
   var next = this.timerWrap ? 'next-wrap' : 'next';
@@ -431,10 +445,8 @@ Slideshow._timerAlarm = function() {
   }
 }
 Slideshow._timerOnGoto = function(e) {
-  e.slideshow.stopTimer();
-
-  if(e.context.from == 'timer' || !e.slideshow.timerCancelOnGoto) {
-    e.slideshow.startTimer();
+  if(e.context.from != 'timer' && e.slideshow.timerCancelOnGoto) {
+    e.slideshow.stopTimer();
   }
 }
 Slideshow._timerTriggerEvent = function(name) {
