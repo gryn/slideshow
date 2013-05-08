@@ -452,7 +452,6 @@ Slideshow._timerAlarm = function() {
   }
 }
 Slideshow._timerOnGoto = function(e) {
-    console.log(e.slideshow);
   if(e.context.from != 'timer' && e.slideshow.timerCancelOnGoto) {
     e.slideshow.stopTimer();
   }
