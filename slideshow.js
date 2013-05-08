@@ -54,6 +54,9 @@
 //    The method to call, detailed below.**
 //    Methods may be prepended with '=' to retreive the value of the method, if any.
 //    Otherwise, the method will allow jQuery standard chaining.
+//    NOTE: methods with prefix '=' return an *array* of results since the method may
+//    be called on multiple slideshows simultaneously. i.e. frequently you will want:
+//      var foo = $('<div').slideshow('=foo')[0];
 
 // $.fn.slideshow('goto', slide, context) - Goto a slide
 //  slide: element/selector or string-keyword,
@@ -71,7 +74,10 @@
 //    this would allow you to avoid event loops.
 //  returns animation promise if called as '=goto'
 
-// $.fn.slideshow('=currentSlide') - Returns the current slide
+// $.fn.slideshow('=currentSlide') - Returns the current slide,
+//  NOTE: returns an array in order work when called on multiple slideshows
+//  e.g. var x = $('div').slideshow('=currentSlide');
+//  console.log(x.length, x); // may result in: 3, [<section>, <section>, <section>]
 
 // $.fn.slideshow('arrows', left, right, wrap) - Setup arrows
 //  left, right: element
