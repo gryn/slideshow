@@ -451,7 +451,9 @@ Slideshow.toggleTimer = function(options) {
 }
 Slideshow._timerAlarm = function() {
   var next = this.timerWrap ? 'next-wrap' : 'next';
-  if(this._figurePage(next).length) {
+  var nextSlide = this._figurePage(next);
+  if(nextSlide.length) {
+    this.timerSlide = nextSlide;
     this['goto'](next, {from: 'timer'});
   } else {
     this.stopTimer();
