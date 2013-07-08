@@ -79,6 +79,14 @@
 //  e.g. var x = $('div').slideshow('=currentSlide');
 //  console.log(x.length, x); // may result in: 3, [<section>, <section>, <section>]
 
+// $.fn.slideshow('=slides') - Returns the current slides,
+//  NOTE: same caveat as any = method, see '=currentSlide' above.
+
+// $.fn.slideshow('remove') - Remove slideshow,
+//  will call the effect's remove (if present) and delete the Slideshow object.
+//  NOTE: 'arrows' other helpers may have bugs with this method?
+//  (they are not currently informed).
+
 // $.fn.slideshow('arrows', left, right, wrap) - Setup arrows
 //  left, right: element
 //    The left and right elements to bind events.
@@ -150,13 +158,14 @@
 //  It's expected that the other slides are sibling elements and match the selector options.slides.
 
 // Effects:
-//  Effects must implement init and goto.
+//  Effects must implement init() and goto().
 //  Init must set $currentSlide on the passed slideshow object.
 //  Goto is expected to hide $currentSlide and show the upcoming slide
 //  (passed as the second argument, slide).
 //  Goto must return a promise object that indicates when the slide is visible.
 //  Generally, this means return $currentSlide.animate(...).
 //  (If animating several elements return them all wrapped in $.when( first, second, ... ) ).
+//  Effects may implement a remove() which will be called if the slideshow is removed.
 
 var Slideshow = {
   init: function(el, options) {
@@ -172,11 +181,14 @@ var Slideshow = {
     if(!this.$currentSlide.length)
       throw "$currentSlide not found, options.wrapper or options.slide perhaps incorrect?";
   },
+  remove: function() {
+    if(this.effect && this.effect.remove) this.effect.remove(this);
+  },
   effects: {
     'default': {
       init: function(slideshow) {
-        slideshow.wrapper = slideshow.$el.children(slideshow.options.wrapper);
-        slideshow.children = slideshow.wrapper.children(slideshow.options.slide);
+        slideshow.wrapper = slideshow.$el.find(slideshow.options.wrapper);
+        slideshow.children = slideshow.wrapper.find(slideshow.options.slide);
         slideshow.$currentSlide = slideshow.children.first();
         slideshow.$el.scrollLeft(0);
       },
@@ -274,8 +286,8 @@ var Slideshow = {
 
 Slideshow.defaults = {
   effect: 'default',
-  wrapper: 'div',
-  slide: 'section',
+  wrapper: '> div',
+  slide: '> section',
   duration: 400
 };
 
@@ -309,6 +321,10 @@ $.fn.slideshow = function(method) {
       return returnValue ?
         undefined :
         this;
+    }
+
+    if(method == 'remove') {
+      $(this).removeData('Slideshow');
     }
 
     var result = slideshow[method].apply(slideshow, methodArguments);
