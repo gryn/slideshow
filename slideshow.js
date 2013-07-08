@@ -266,6 +266,9 @@ var Slideshow = {
   },
   currentSlide: function() {
     return this.$currentSlide;
+  },
+  slides: function() {
+    return this.$currentSlide.parent().children(this.options.slide);
   }
 };
 
