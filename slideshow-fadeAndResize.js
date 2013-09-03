@@ -11,25 +11,45 @@
 // (the container will also animate to it's new size rather than jump).
 Slideshow.effects.fadeAndResize = {
   init: function(slideshow) {
-    slideshow.wrapper = slideshow.$el.children(slideshow.options.wrapper);
+    slideshow.wrapper = slideshow.$el.find(slideshow.options.wrapper);
     slideshow.children = slideshow.wrapper.children(slideshow.options.slide);
     slideshow.$currentSlide = slideshow.children.first();
     slideshow.$el.scrollLeft(0);
-    slideshow.$currentSlide.css({'z-index': 10, 'visibility': 'visible', 'position': 'relative'});
+    slideshow.$currentSlide.css({zIndex: 10, display: 'block', visibility: 'visible', position: 'relative'});
   },
   'goto': function(slideshow, slide, context) {
-    slideshow.$el.css({'height': slideshow.$currentSlide.outerHeight()});
-    slide.show().css({'z-index': 10, 'visibility': 'visible'});
-    slideshow.$currentSlide.css({'z-index': 20, 'position': 'absolute'});
+    var target = { height: slideshow.$currentSlide.outerHeight() };
+    if(slideshow.options.setWidth) {
+      target.width = slideshow.$currentSlide.outerWidth();
+    }
+    slideshow.$el.css(target);
 
-    var fadeOut = slideshow.$currentSlide.fadeOut(slideshow.options.duration);
-    var resize = slideshow.$el.animate({'height': slide.outerHeight()}, slideshow.options.duration);
+    slide.show().css({zIndex: 10, visibility: 'visible'});
+    slideshow.$currentSlide.css({zIndex: 20, position: 'absolute'});
+
+    target = { height: slide.outerHeight() };
+    if(slideshow.options.setWidth) {
+      target.width = slide.outerWidth();
+    }
+    
+    var fadeOut = $.when();
+    var resize = $.when();
+
+    if(typeof context.animate == 'undefined' || context.animate !== false) {
+      fadeOut = slideshow.$currentSlide.fadeOut(slideshow.options.duration);
+      resize = slideshow.$el.animate(target, slideshow.options.duration);
+    } else {
+      slideshow.$currentSlide.hide();
+      slideshow.$el.css(target);
+    }
+      
 
     var lastSlide = slideshow.$currentSlide;
     var flipLayout = function() {
       slide.css({'position': 'relative'});
       lastSlide.css({'position': 'absolute'});
-      slideshow.$el.css({'height': ''});
+      if(slideshow.options.resetHeightAfterGoto)
+        slideshow.$el.css({height: '', width: ''});
     }
 
     var both = $.when(fadeOut, resize);

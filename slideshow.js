@@ -188,7 +188,7 @@ var Slideshow = {
     'default': {
       init: function(slideshow) {
         slideshow.wrapper = slideshow.$el.find(slideshow.options.wrapper);
-        slideshow.children = slideshow.wrapper.find(slideshow.options.slide);
+        slideshow.children = slideshow.wrapper.children(slideshow.options.slide);
         slideshow.$currentSlide = slideshow.children.first();
         slideshow.$el.scrollLeft(0);
       },
@@ -199,6 +199,8 @@ var Slideshow = {
     }
   },
   _figurePage: function(slide) {
+    if(typeof slide == 'number')
+      return this.$currentSlide.parent().children(this.options.slide).eq(slide);
     if( slide == 'current' || slide == '#current' )
       return this.$currentSlide;
     if( slide == 'next' || slide == '#next' )
@@ -287,7 +289,7 @@ var Slideshow = {
 Slideshow.defaults = {
   effect: 'default',
   wrapper: '> div',
-  slide: '> section',
+  slide: 'section', // slide must be a child of wrapper
   duration: 400
 };
 
@@ -403,7 +405,7 @@ Slideshow.navigation = function(nav, linkCreateCallback) {
 // NOTE: fade requires a fixed height since the slides are positioned absolutely.
 Slideshow.effects.fade = {
   init: function(slideshow) {
-    slideshow.wrapper = slideshow.$el.children(slideshow.options.wrapper);
+    slideshow.wrapper = slideshow.$el.find(slideshow.options.wrapper);
     slideshow.children = slideshow.wrapper.children(slideshow.options.slide);
     slideshow.$currentSlide = slideshow.children.first();
     slideshow.$el.scrollLeft(0);
