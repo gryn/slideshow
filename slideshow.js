@@ -362,6 +362,8 @@ Slideshow.arrows = function(left, right, wrap) {
 
 Slideshow.navigation = function(nav, linkCreateCallback) {
   var slideshow = this;
+  var navCounter = (slideshow.navCounter || 0) + 1;
+  slideshow.navCounter = navCounter;
 
   if(!linkCreateCallback) linkCreateCallback = function(i, slide) {
     return $('<a>'+(i+1)+'</a>');
@@ -371,8 +373,8 @@ Slideshow.navigation = function(nav, linkCreateCallback) {
   children.each(function(i, slide) {
     slide = $(slide);
     var el = linkCreateCallback(i, slide);
-    $.data(el.get(0), 'Slideshow-slide', slide);
-    $.data(slide.get(0), 'Slideshow-nav', el);
+    $.data(el.get(0), 'SlideshowSlide', slide);
+    $.data(slide.get(0), 'SlideshowNav'+navCounter, el);
     if(!el.parent().length) {
       nav.append(el);
     }
@@ -381,12 +383,12 @@ Slideshow.navigation = function(nav, linkCreateCallback) {
 
   function navClick() {
     var el = $(this);
-    var slide = $.data(this, 'Slideshow-slide');
+    var slide = $.data(this, 'SlideshowSlide');
     slideshow['goto'](slide, {from: 'navigation'});
   }
 
   function onGoto() {
-    var el = $.data(slideshow.$currentSlide.get(0), 'Slideshow-nav') || $();
+    var el = $.data(slideshow.$currentSlide.get(0), 'SlideshowNav'+navCounter) || $();
     el.addClass('selected');
     el.siblings().removeClass('selected');
   }
