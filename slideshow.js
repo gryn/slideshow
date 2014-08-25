@@ -343,10 +343,10 @@ Slideshow.arrows = function(left, right, wrap) {
   wrap = wrap ? '-wrap' : ''; 
 
   left.click(function() {
-    slideshow['goto']('prev'+wrap, {from: 'arrows'});
+    slideshow['goto']('prev'+wrap, {from: 'arrows', dir: 'prev'});
   });
   right.click(function() {
-    slideshow['goto']('next'+wrap, {from: 'arrows'});
+    slideshow['goto']('next'+wrap, {from: 'arrows', dir: 'next'});
   });
 
   function onGoto() {
@@ -431,35 +431,43 @@ $.extend(Slideshow.defaults, {
   timerCancelOnGoto: false
 });
 Slideshow.startTimer = function(options) {
-  this._clearInterval();
+  this._clearTimeout();
   
   options = options || {};
   this.timerDuration = typeof(options.duration) == 'undefined' ?
-      this.options.timerDuration :
-      options.duration;
+    this.options.timerDuration :
+    options.duration;
   this.timerWrap = typeof(options.wrap) == 'undefined' ?
-      this.options.timerWrap :
-      options.wrap;
+    this.options.timerWrap :
+    options.wrap;
   this.timerCancelOnGoto = typeof(options.cancelOnGoto) == 'undefined' ?
-      this.options.cancelOnGoto :
-      options.cancelOnGoto;
+    this.options.cancelOnGoto :
+    options.cancelOnGoto;
 
-    this.timerID = setInterval(this._timerAlarm.bind(this), this.timerDuration);
+  this._startTimer();
+
+  // only do these things once, not each time we start the timer.
   if(!this.timerOnce) {
     this.timerOnce = true;
     this.$el.on('slideshowGoto', this._timerOnGoto);
+    this.$el.on('slideshowGotoComplete', this._timerOnGotoComplete);
   }
 
   this.timerSlide = this.$currentSlide;
   this._timerTriggerEvent('slideshowTimerStart');
 }
-Slideshow._clearInterval = function() {
+Slideshow._startTimer = function() {
+  console.log('started timer');
+  this.timerGotoRestart = false;
+  this.timerID = setTimeout(this._timerAlarm.bind(this), this.timerDuration);
+}
+Slideshow._clearTimeout = function() {
   if(!this.timerID) return;
-  clearInterval(this.timerID);
+  clearTimeout(this.timerID);
   this.timerID = null;
 }
-Slideshow.stopTimer = function(_event) {
-  this._clearInterval();
+Slideshow.stopTimer = function() {
+  this._clearTimeout();
   this._timerTriggerEvent('slideshowTimerStop');
 }
 Slideshow.timerRunning = function() {
@@ -483,9 +491,22 @@ Slideshow._timerAlarm = function() {
   }
 }
 Slideshow._timerOnGoto = function(e) {
-  if(e.context.from != 'timer' && e.slideshow.timerCancelOnGoto) {
-    e.slideshow.stopTimer();
-  }
+  // anytime the slideshow moves, stop the timer,
+  // the onGotoComplete will start it back up again, if appropriate.
+  e.slideshow.stopTimer();
+  e.slideshow.timerGotoRestart = true;
+}
+Slideshow._timerOnGotoComplete = function(e) {
+  // by waiting until the slide finishes transitioning,
+  // we avoid building up timer events when the tab is not active.
+
+  // however, we might want to not start the time back up
+  if(e.context.from != 'timer' && e.slideshow.timerCancelOnGoto)
+    return;
+  if(!e.slideshow.timerGotoRestart)
+    return;
+
+  e.slideshow._startTimer();
 }
 Slideshow._timerTriggerEvent = function(name) {
   var timerEvent = $.Event(name, {
